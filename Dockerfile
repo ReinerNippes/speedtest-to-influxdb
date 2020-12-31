@@ -1,28 +1,25 @@
-FROM python:3.8-buster
+FROM python:3.8-slim-buster
 
 LABEL maintainer="Aiden Gilmartin" \
     description="Speedtest to InfluxDB data bridge"
 
 # Install dependencies
 ENV DEBIAN_FRONTEND=noninteractive
-RUN apt-get update
-RUN apt-get -q -y install --no-install-recommends apt-utils gnupg1 apt-transport-https dirmngr
 
-# Install speedtest-cli
-RUN apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 379CE192D401AB61
-RUN echo "deb https://ookla.bintray.com/debian buster main" | tee  /etc/apt/sources.list.d/speedtest.list
-RUN apt-get update && apt-get -q -y install speedtest
-
-# Install Python packages
 COPY requirements.txt /
-RUN pip install -r /requirements.txt
 
-# Clean up
-RUN apt-get -q -y autoremove
-RUN apt-get -q -y clean
-RUN rm -rf /var/lib/apt/lists/*
+RUN apt-get update && \
+    apt-get dist-upgrade -y && \
+    apt-get -q -y install --no-install-recommends apt-utils gnupg1 apt-transport-https dirmngr && \
+    apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 379CE192D401AB61 && \
+    echo "deb https://ookla.bintray.com/debian buster main" | tee  /etc/apt/sources.list.d/speedtest.list && \
+    apt-get update && apt-get -q -y install speedtest && \
+    apt-get -q -y autoremove && \
+    apt-get -q -y clean && \
+    rm -rf /var/lib/apt/lists/* && \
+    pip3 install -r /requirements.txt
 
 # Final setup & execution
-COPY . /app
+COPY speedtest2influx.py /app/speedtest2influx.py
 WORKDIR /app
-CMD ["python3", "-u", "main.py"]
+CMD ["python3", "-u", "speedtest2influx.py"]
